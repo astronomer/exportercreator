@@ -1,0 +1,34 @@
+type: exporter_creator
+
+status:
+  class: exporter
+  stability:
+    development: [ logs, metrics, traces ]
+  distributions: []
+  codeowners:
+    active: [ stu ]
+
+telemetry:
+  metrics:
+    exporter_creator_exporters_count:
+      enabled: true
+      stability:
+        level: development
+      description: Current number of exporters created by the exporter_creator.
+      unit: "{exporters}"
+      gauge:
+        value_type: int
+    exporter_creator_nonroutable_metric_points_total:
+      enabled: true
+      stability:
+        level: development
+      description: Total number of metric points that could not be routed to any exporter.
+      unit: "{metric_points}"
+      sum:
+        value_type: int
+        aggregation_temporality: cumulative
+        monotonic: true
+
+tests:
+  skip_lifecycle: true
+  skip_shutdown: true

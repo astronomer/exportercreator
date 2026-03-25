@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: exportercreator
+
+      # go.mod replaces extension/observer with a local path; checkout contrib alongside this module.
+      - uses: actions/checkout@v4
+        with:
+          repository: open-telemetry/opentelemetry-collector-contrib
+          path: opentelemetry-collector-contrib
+          ref: main
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: exportercreator/go.mod
+          cache-dependency-path: exportercreator/go.sum
+
+      - name: Check go mod tidy
+        working-directory: exportercreator
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      - name: Unit tests
+        working-directory: exportercreator
+        run: go test ./...
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          working-directory: exportercreator
