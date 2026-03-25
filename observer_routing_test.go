@@ -32,7 +32,7 @@ func (m *mockJSONFileEndpoint) Env() observer.EndpointEnv {
 }
 
 func (*mockJSONFileEndpoint) Type() observer.EndpointType {
-	return observer.JSONFileType
+	return ObserverEndpointTypeJSONFile
 }
 
 func TestExporterCreator_JSONObserverRouting(t *testing.T) {
@@ -185,7 +185,7 @@ func TestExporterCreator_CRDObserverRouting(t *testing.T) {
 	crdEndpoint1 := observer.Endpoint{
 		ID:     observer.EndpointID("default/exporter-1-uid"),
 		Target: "exporter-1",
-		Details: &observer.K8sCRD{
+		Details: &stubK8sCRDDetails{
 			Name:      "exporter-1",
 			UID:       "exporter-1-uid",
 			Namespace: "default",
@@ -210,7 +210,7 @@ func TestExporterCreator_CRDObserverRouting(t *testing.T) {
 	crdEndpoint2 := observer.Endpoint{
 		ID:     observer.EndpointID("default/exporter-2-uid"),
 		Target: "exporter-2",
-		Details: &observer.K8sCRD{
+		Details: &stubK8sCRDDetails{
 			Name:      "exporter-2",
 			UID:       "exporter-2-uid",
 			Namespace: "default",
@@ -431,7 +431,7 @@ func TestExporterCreator_CRDObserverRouting_UnmatchedMetrics(t *testing.T) {
 	crdEndpoint := observer.Endpoint{
 		ID:     observer.EndpointID("default/exporter-uid"),
 		Target: "exporter",
-		Details: &observer.K8sCRD{
+		Details: &stubK8sCRDDetails{
 			Name:      "exporter",
 			UID:       "exporter-uid",
 			Namespace: "default",

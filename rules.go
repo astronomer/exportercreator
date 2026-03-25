@@ -25,7 +25,7 @@ var ruleRe = regexp.MustCompile(
 	fmt.Sprintf(`^type\s*==\s*(%q|%q|%q|%q|%q|%q|%q|%q|%q|%q|%q)`,
 		observer.PodType, observer.K8sServiceType, observer.K8sIngressType, observer.PortType,
 		observer.PodContainerType, observer.HostPortType, observer.ContainerType,
-		observer.K8sNodeType, observer.KafkaTopicType, observer.K8sCRDType, observer.JSONFileType),
+		observer.K8sNodeType, observer.KafkaTopicType, ObserverEndpointTypeK8sCRD, ObserverEndpointTypeJSONFile),
 )
 
 // newRule creates a new rule instance.

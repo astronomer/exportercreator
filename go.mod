@@ -64,8 +64,3 @@ require (
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-// Local contrib observer includes K8sCRD / JSONFile endpoint types not yet in a tagged release.
-// For OpenTelemetry Collector Builder, add the same replace next to your gomod entry, or drop this
-// replace once github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer contains them.
-replace github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer => ../opentelemetry-collector-contrib/extension/observer

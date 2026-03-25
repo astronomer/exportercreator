@@ -132,7 +132,7 @@ var kafkaTopicsEndpoint = observer.Endpoint{
 var crdEndpoint = observer.Endpoint{
 	ID:     observer.EndpointID("default/crd-1"),
 	Target: "crd-1",
-	Details: &observer.K8sCRD{
+	Details: &stubK8sCRDDetails{
 		Name:      "crd-1",
 		UID:       "crd-uid-1",
 		Namespace: "default",
@@ -168,7 +168,3 @@ var unsupportedEndpoint = observer.Endpoint{
 	Details: nil,
 }
 
-var portRule = func() *rule {
-	r, _ := newRule(`type == "port"`)
-	return &r
-}()

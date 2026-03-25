@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/confmap/xconfmap"
-	"go.opentelemetry.io/collector/exporter"
 	exp "go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/pipeline"
 	"go.uber.org/multierr"
@@ -31,14 +30,14 @@ type runner interface {
 // exporterRunner handles starting/stopping of a concrete subexporter instance.
 type exporterRunner struct {
 	logger      *zap.Logger
-	params      exporter.Settings
+	params      exp.Settings
 	idNamespace component.ID
 	host        host
 	exporters   map[string]*wrappedExporter
 	lock        *sync.Mutex
 }
 
-func newExporterRunner(params exporter.Settings, host host) *exporterRunner {
+func newExporterRunner(params exp.Settings, host host) *exporterRunner {
 	return &exporterRunner{
 		logger:      params.Logger,
 		params:      params,

@@ -37,7 +37,7 @@ You also need at least one **observer extension** in the same manifest (for exam
 
 - **Module path:** `github.com/stuart23/exportercreator`
 - **Shared state:** includes a copy of contrib’s [`internal/sharedcomponent`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/internal/sharedcomponent), which is not importable from outside the contrib module tree as a normal dependency.
-- **Observer API:** `go.mod` **replaces** `github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer` with a sibling checkout (`../opentelemetry-collector-contrib/extension/observer`) so builds can use endpoint types such as `K8sCRD` and `JSONFileType` that may lag behind tagged contrib releases.
+- **Observer API:** depends on a tagged [`extension/observer`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension/observer) release (see `go.mod`). Rules accept `k8s.crd` and `jsonfile` endpoint kinds via `ObserverEndpointTypeK8sCRD` / `ObserverEndpointTypeJSONFile` so behavior stays aligned with real observers even when those kinds are not yet named constants in the observer module.
 
 ## How it works
 
@@ -127,4 +127,4 @@ config:
 go test ./...
 ```
 
-For a working module graph, clone [opentelemetry-collector-contrib](https://github.com/open-telemetry/opentelemetry-collector-contrib) next to this repo so the `replace` in `go.mod` resolves, or adjust `replace` paths to match your layout. CI uses the same pattern (see [`.github/workflows/ci.yaml`](.github/workflows/ci.yaml)).
+`go test ./...` uses the published observer module from the proxy; no local contrib checkout is required.

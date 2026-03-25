@@ -21,7 +21,7 @@ func TestExporterCreator_WithCRDEndpoint(t *testing.T) {
 	crdEndpoint := observer.Endpoint{
 		ID:     observer.EndpointID("default/prometheus-exporter-uid"),
 		Target: "prometheus-remote-write-exporter",
-		Details: &observer.K8sCRD{
+		Details: &stubK8sCRDDetails{
 			Name:      "prometheus-remote-write-exporter",
 			UID:       "prometheus-exporter-uid",
 			Namespace: "default",
@@ -133,7 +133,7 @@ func TestExporterCreator_WithMultipleCRDEndpoints(t *testing.T) {
 	otlpEndpoint := observer.Endpoint{
 		ID:     observer.EndpointID("default/otlp-exporter-uid"),
 		Target: "otlp-exporter",
-		Details: &observer.K8sCRD{
+		Details: &stubK8sCRDDetails{
 			Name:      "otlp-exporter",
 			UID:       "otlp-exporter-uid",
 			Namespace: "default",
@@ -160,7 +160,7 @@ func TestExporterCreator_WithMultipleCRDEndpoints(t *testing.T) {
 	influxEndpoint := observer.Endpoint{
 		ID:     observer.EndpointID("default/influxdb-exporter-uid"),
 		Target: "influxdb-exporter",
-		Details: &observer.K8sCRD{
+		Details: &stubK8sCRDDetails{
 			Name:      "influxdb-exporter",
 			UID:       "influxdb-exporter-uid",
 			Namespace: "default",
@@ -276,7 +276,7 @@ func TestExporterCreator_CRDEndpointConfigExpansion(t *testing.T) {
 	crdEndpoint := observer.Endpoint{
 		ID:     observer.EndpointID("default/test-uid"),
 		Target: "test-exporter",
-		Details: &observer.K8sCRD{
+		Details: &stubK8sCRDDetails{
 			Name:      "test-exporter",
 			UID:       "test-uid",
 			Namespace: "default",
@@ -351,7 +351,7 @@ func TestExporterCreator_CRDEndpointChange(t *testing.T) {
 	initialEndpoint := observer.Endpoint{
 		ID:     observer.EndpointID("default/test-uid"),
 		Target: "test-exporter",
-		Details: &observer.K8sCRD{
+		Details: &stubK8sCRDDetails{
 			Name:      "test-exporter",
 			UID:       "test-uid",
 			Namespace: "default",
@@ -368,7 +368,7 @@ func TestExporterCreator_CRDEndpointChange(t *testing.T) {
 	changedEndpoint := observer.Endpoint{
 		ID:     observer.EndpointID("default/test-uid"),
 		Target: "test-exporter",
-		Details: &observer.K8sCRD{
+		Details: &stubK8sCRDDetails{
 			Name:      "test-exporter",
 			UID:       "test-uid",
 			Namespace: "default",
@@ -437,7 +437,7 @@ func TestExporterCreator_CRDEndpointRouting(t *testing.T) {
 	crdEndpoint := observer.Endpoint{
 		ID:     observer.EndpointID("default/test-uid"),
 		Target: "test-exporter",
-		Details: &observer.K8sCRD{
+		Details: &stubK8sCRDDetails{
 			Name:      "test-exporter",
 			UID:       "test-uid",
 			Namespace: "default",
