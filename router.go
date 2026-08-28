@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package exportercreator // import "github.com/stuart23/exportercreator"
+package exportercreator // import "github.com/astronomer/exportercreator"
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.uber.org/zap"
 
-	"github.com/stuart23/exportercreator/internal/metadata"
+	"github.com/astronomer/exportercreator/internal/metadata"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
 )
 

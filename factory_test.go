@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/exporter/exportertest"
 
-	"github.com/stuart23/exportercreator/internal/metadata"
+	"github.com/astronomer/exportercreator/internal/metadata"
 )
 
 func TestCreateExporter_SameInstancePerConfig(t *testing.T) {

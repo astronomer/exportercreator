@@ -26,4 +26,4 @@ jobs:
       - name: Request pkg.go.dev indexing
         run: |
           GOPROXY=https://proxy.golang.org GO111MODULE=on \
-            go list -m github.com/stuart23/exportercreator@${GITHUB_REF_NAME}
+            go list -m github.com/astronomer/exportercreator@${GITHUB_REF_NAME}

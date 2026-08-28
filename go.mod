@@ -1,4 +1,4 @@
-module github.com/stuart23/exportercreator
+module github.com/astronomer/exportercreator
 
 go 1.25.0
 

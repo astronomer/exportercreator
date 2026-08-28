@@ -13,11 +13,11 @@ import (
 )
 
 func Meter(settings component.TelemetrySettings) metric.Meter {
-	return settings.MeterProvider.Meter("github.com/stuart23/exportercreator")
+	return settings.MeterProvider.Meter("github.com/astronomer/exportercreator")
 }
 
 func Tracer(settings component.TelemetrySettings) trace.Tracer {
-	return settings.TracerProvider.Tracer("github.com/stuart23/exportercreator")
+	return settings.TracerProvider.Tracer("github.com/astronomer/exportercreator")
 }
 
 // TelemetryBuilder provides an interface for components to report telemetry

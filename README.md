@@ -16,7 +16,7 @@ The **exporter_creator** exporter dynamically creates other exporters at runtime
 
 ## Relationship to OpenTelemetry Collector Contrib
 
-In [opentelemetry-collector-contrib](https://github.com/open-telemetry/opentelemetry-collector-contrib), **[receiver creator](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/receivercreator)** (`receiver_creator`) watches observers and spawns receivers from templates. **Exporter creator** is the same pattern for exporters: watch observers, match rules, instantiate exporters. This repository tracks the implementation from contrib’s [`exporter/exportercreator`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/exportercreator), published as a standalone module (`github.com/stuart23/exportercreator`) for custom collector builds.
+In [opentelemetry-collector-contrib](https://github.com/open-telemetry/opentelemetry-collector-contrib), **[receiver creator](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/receivercreator)** (`receiver_creator`) watches observers and spawns receivers from templates. **Exporter creator** is the same pattern for exporters: watch observers, match rules, instantiate exporters. This repository tracks the implementation from contrib’s [`exporter/exportercreator`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/exportercreator), published as a standalone module (`github.com/astronomer/exportercreator`) for custom collector builds.
 
 ## Building a collector with this exporter
 
@@ -28,14 +28,14 @@ Add the module under `exporters` in `builder-config.yaml` (use a real version ta
 exporters:
   - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.147.0
   - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.147.0
-  - gomod: github.com/stuart23/exportercreator v0.1.0
+  - gomod: github.com/astronomer/exportercreator v0.1.0
 ```
 
 You also need at least one **observer extension** in the same manifest (for example `k8s_observer`, `jsonfile_observer`) so `watch_observers` has something to attach to. This module depends on `extension/observer` from contrib; your `go.mod` or builder manifest often needs **replace** directives for contrib paths (including observer submodules such as `jsonfileobserver`). Copy and adapt the `replaces` block from [`builder-config.example.yaml`](builder-config.example.yaml)—paths are relative to the builder **`output_path`** directory.
 
 ## Go module and dependencies
 
-- **Module path:** `github.com/stuart23/exportercreator`
+- **Module path:** `github.com/astronomer/exportercreator`
 - **Shared state:** includes a copy of contrib’s [`internal/sharedcomponent`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/internal/sharedcomponent), which is not importable from outside the contrib module tree as a normal dependency.
 - **Observer API:** depends on a tagged [`extension/observer`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension/observer) release (see `go.mod`). Rules accept `k8s.crd` and `jsonfile` endpoint kinds via `ObserverEndpointTypeK8sCRD` / `ObserverEndpointTypeJSONFile` so behavior stays aligned with real observers even when those kinds are not yet named constants in the observer module.
 

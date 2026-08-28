@@ -20,8 +20,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata/metricdatatest"
 
-	"github.com/stuart23/exportercreator/internal/metadata"
-	"github.com/stuart23/exportercreator/internal/metadatatest"
+	"github.com/astronomer/exportercreator/internal/metadata"
+	"github.com/astronomer/exportercreator/internal/metadatatest"
 )
 
 func TestExporterCreator_Start(t *testing.T) {

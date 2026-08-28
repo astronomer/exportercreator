@@ -8,7 +8,7 @@ import (
 
 var (
 	Type      = component.MustNewType("exporter_creator")
-	ScopeName = "github.com/stuart23/exportercreator"
+	ScopeName = "github.com/astronomer/exportercreator"
 )
 
 const (

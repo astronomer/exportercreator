@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package exportercreator // import "github.com/stuart23/exportercreator"
+package exportercreator // import "github.com/astronomer/exportercreator"
 
 import (
 	"fmt"

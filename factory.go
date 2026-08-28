@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package exportercreator // import "github.com/stuart23/exportercreator"
+package exportercreator // import "github.com/astronomer/exportercreator"
 
 import (
 	"context"
@@ -9,8 +9,8 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/exporter"
 
-	"github.com/stuart23/exportercreator/internal/metadata"
-	"github.com/stuart23/exportercreator/internal/sharedcomponent"
+	"github.com/astronomer/exportercreator/internal/metadata"
+	"github.com/astronomer/exportercreator/internal/sharedcomponent"
 )
 
 // This file implements factory for exporter_creator. An exporter_creator can create other exporters at runtime.
