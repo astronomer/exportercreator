@@ -128,3 +128,30 @@ go test ./...
 ```
 
 `go test ./...` uses the published observer module from the proxy; no local contrib checkout is required.
+
+## Building a collector image
+
+`Dockerfile` and `builder-config.yaml` build a collector image containing exporter_creator as
+built from the checkout, rather than the module published to the proxy, so an image built from a
+branch contains that branch's code.
+
+The component list mirrors the Astro data-plane distribution
+(`astro/tools/otelcol-builder/builder-config.yaml`), so the image exercises exporter_creator in
+the same company it keeps in production. Keep the two in step; the only intended difference is
+the `replaces` block.
+
+Locally:
+
+```bash
+docker build -t exportercreator-otelcol:local .
+docker run --rm exportercreator-otelcol:local components   # exporter_creator should be listed
+```
+
+In CI, run the **Build and push image** workflow from the Actions tab. It is manual only, takes
+an optional tag (defaulting to `<branch>-<short sha>`), verifies the collector lists
+exporter_creator before pushing, and publishes to `ghcr.io/astronomer/exportercreator/otelcol`.
+
+The package is created on the first successful run. This repository is public, so the package is
+created public as well, and `GITHUB_TOKEN` cannot change that. To keep the image private, set the
+package to Private once under **Packages > exportercreator/otelcol > Package settings**;
+subsequent pushes keep whatever visibility the package already has.
