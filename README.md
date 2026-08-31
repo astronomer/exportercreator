@@ -141,6 +141,23 @@ everything except logs, name what you want:
 A block that enables nothing is rejected at startup, as is an unrecognised signal name or a
 non-boolean value.
 
+### Signals an exporter cannot handle
+
+Routing matches on resource attributes alone, so it can select an endpoint whose exporter does
+not handle that signal - a `prometheusremotewrite` template matched by a logs pipeline, for
+example. That exporter cannot consume the telemetry, and because the resource already matched,
+it does not fall through to `default_exporters`. The telemetry is dropped only if no other
+matched exporter handles the signal.
+
+Dropped telemetry is reported by
+`otelcol_exporter_creator_nonroutable_log_records_total`,
+`otelcol_exporter_creator_nonroutable_metric_points_total` or
+`otelcol_exporter_creator_nonroutable_spans_total`. Each incompatible matched exporter also logs
+a warning once per signal.
+
+To avoid the drop, route only the signals your templates handle through `exporter_creator`, or
+give the endpoint an exporter template that covers them.
+
 ## Endpoint Value Expansion
 
 Configuration values can reference endpoint properties using backtick expressions:

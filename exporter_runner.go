@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 
 	"github.com/spf13/cast"
 	"go.opentelemetry.io/collector/component"
@@ -71,7 +72,7 @@ func (run *exporterRunner) start(
 	// Sets dynamically created exporter to something like exporter_creator/1/otlp{endpoint="localhost:4317"}/<EndpointID>.
 	id := component.NewIDWithName(factory.Type(), fmt.Sprintf("%s/%s{endpoint=%q}/%s", exporterCfg.id.Name(), run.idNamespace, targetEndpoint, exporterCfg.endpointID))
 
-	we := &wrappedExporter{}
+	we := &wrappedExporter{id: id}
 	var createError error
 
 	// Create exporter instances only for enabled signals
@@ -236,9 +237,34 @@ func (run *exporterRunner) createTracesRuntimeExporter(
 var _ component.Component = (*wrappedExporter)(nil)
 
 type wrappedExporter struct {
+	// id is the runtime exporter's component ID, naming both the template it came from and
+	// the endpoint it was created for. It is what identifies this exporter in a log; the Go
+	// type is the same for every one of them.
+	id      component.ID
 	logs    exp.Logs
 	metrics exp.Metrics
 	traces  exp.Traces
+
+	// warned records whether the unsupported-signal warning has already been emitted for each
+	// signal. Whether an exporter handles a signal is fixed when it is created, so the mismatch
+	// is worth reporting once rather than on every export.
+	warnedLogs    atomic.Bool
+	warnedMetrics atomic.Bool
+	warnedTraces  atomic.Bool
+}
+
+// firstUnsupported reports whether this is the first time the exporter has been asked for a
+// signal it does not handle.
+func (w *wrappedExporter) firstUnsupported(signal string) bool {
+	switch signal {
+	case "logs":
+		return !w.warnedLogs.Swap(true)
+	case "metrics":
+		return !w.warnedMetrics.Swap(true)
+	case "traces":
+		return !w.warnedTraces.Swap(true)
+	}
+	return false
 }
 
 func (w *wrappedExporter) Start(ctx context.Context, host component.Host) error {
