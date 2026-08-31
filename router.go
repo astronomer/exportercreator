@@ -13,15 +13,21 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.uber.org/zap"
 
-	"github.com/stuart23/exportercreator/internal/metadata"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
+	"github.com/stuart23/exportercreator/internal/metadata"
 )
 
 // telemetryRouter routes telemetry to exporters based on resource attribute matching.
 type telemetryRouter struct {
-	mu        sync.RWMutex
-	rules     []RoutingRule
-	exporters map[observer.EndpointID]*routedExporter
+	mu    sync.RWMutex
+	rules []RoutingRule
+	// exporters maps an endpoint to every exporter created for it. One endpoint may match
+	// several exporter templates, each producing its own exporter with its own properties.
+	exporters map[observer.EndpointID][]*routedExporter
+	// count is the total number of exporters across every endpoint in exporters, kept in
+	// step with it under mu. Routing reads the count several times per batch, and totalling
+	// the map each time made that scale with the number of exporters.
+	count     int
 	telemetry *metadata.TelemetryBuilder
 	logger    *zap.Logger
 }
@@ -36,7 +42,7 @@ type routedExporter struct {
 func newTelemetryRouter(rules []RoutingRule, telemetry *metadata.TelemetryBuilder) *telemetryRouter {
 	return &telemetryRouter{
 		rules:     rules,
-		exporters: make(map[observer.EndpointID]*routedExporter),
+		exporters: make(map[observer.EndpointID][]*routedExporter),
 		telemetry: telemetry,
 		logger:    nil, // Will be set if logger is available
 	}
@@ -54,27 +60,29 @@ func (r *telemetryRouter) AddExporter(id observer.EndpointID, exp component.Comp
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.exporters[id] = &routedExporter{
+	r.exporters[id] = append(r.exporters[id], &routedExporter{
 		exporter:   exp,
 		properties: flattenProperties(env),
-	}
+	})
+	r.count++
 
 	// Update the gauge metric with the current count
 	if r.telemetry != nil {
-		r.telemetry.ExporterCreatorExportersCount.Record(context.Background(), int64(len(r.exporters)))
+		r.telemetry.ExporterCreatorExportersCount.Record(context.Background(), int64(r.count))
 	}
 }
 
-// RemoveExporter unregisters an exporter.
+// RemoveExporter unregisters every exporter created for an endpoint.
 func (r *telemetryRouter) RemoveExporter(id observer.EndpointID) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	r.count -= len(r.exporters[id])
 	delete(r.exporters, id)
 
 	// Update the gauge metric with the current count
 	if r.telemetry != nil {
-		r.telemetry.ExporterCreatorExportersCount.Record(context.Background(), int64(len(r.exporters)))
+		r.telemetry.ExporterCreatorExportersCount.Record(context.Background(), int64(r.count))
 	}
 }
 
@@ -90,13 +98,15 @@ func (r *telemetryRouter) Route(resourceAttrs pcommon.Map) []component.Component
 		r.logger.Debug("routing metrics",
 			zap.Any("resource_attributes", resourceAttrsMap),
 			zap.Int("routing_rules", len(r.rules)),
-			zap.Int("available_exporters", len(r.exporters)),
+			// Count, not r.count: this runs before Route takes r.mu, and an
+			// unsynchronized read races the observer callbacks that maintain it.
+			zap.Int("available_exporters", r.Count()),
 		)
 	}
 
 	if len(r.rules) == 0 {
 		r.mu.RLock()
-		exportersCount := len(r.exporters)
+		exportersCount := r.count
 		r.mu.RUnlock()
 		if r.logger != nil {
 			// Convert resource attrs to map for logging
@@ -116,7 +126,7 @@ func (r *telemetryRouter) Route(resourceAttrs pcommon.Map) []component.Component
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	if len(r.exporters) == 0 {
+	if r.count == 0 {
 		if r.logger != nil {
 			// Convert resource attrs to map for logging
 			resourceAttrsMap := make(map[string]string)
@@ -133,57 +143,59 @@ func (r *telemetryRouter) Route(resourceAttrs pcommon.Map) []component.Component
 	}
 
 	var matched []component.Component
-	for id, exp := range r.exporters {
-		matchedRules := r.matchesAllRules(resourceAttrs, exp.properties)
-		if matchedRules {
-			matched = append(matched, exp.exporter)
-			if r.logger != nil {
-				// Log the properties that matched for debugging
-				exportProps := make(map[string]any)
-				if spec, ok := exp.properties["spec"].(map[string]any); ok {
-					if resourceAttrs, ok := spec["resourceAttributes"].(map[string]any); ok {
-						exportProps["spec.resourceAttributes"] = resourceAttrs
+	for id, exps := range r.exporters {
+		for _, exp := range exps {
+			matchedRules := r.matchesAllRules(resourceAttrs, exp.properties)
+			if matchedRules {
+				matched = append(matched, exp.exporter)
+				if r.logger != nil {
+					// Log the properties that matched for debugging
+					exportProps := make(map[string]any)
+					if spec, ok := exp.properties["spec"].(map[string]any); ok {
+						if resourceAttrs, ok := spec["resourceAttributes"].(map[string]any); ok {
+							exportProps["spec.resourceAttributes"] = resourceAttrs
+						}
 					}
+					// Also log the resource attributes from the metrics for comparison
+					metricsAttrs := make(map[string]string)
+					resourceAttrs.Range(func(k string, v pcommon.Value) bool {
+						metricsAttrs[k] = v.AsString()
+						return true
+					})
+					r.logger.Info("exporter matched routing rules",
+						zap.String("endpoint_id", string(id)),
+						zap.Any("matched_properties", exportProps),
+						zap.Any("metrics_resource_attributes", metricsAttrs),
+					)
 				}
-				// Also log the resource attributes from the metrics for comparison
-				metricsAttrs := make(map[string]string)
-				resourceAttrs.Range(func(k string, v pcommon.Value) bool {
-					metricsAttrs[k] = v.AsString()
-					return true
-				})
-				r.logger.Info("exporter matched routing rules",
-					zap.String("endpoint_id", string(id)),
-					zap.Any("matched_properties", exportProps),
-					zap.Any("metrics_resource_attributes", metricsAttrs),
-				)
-			}
-		} else {
-			// Log why this exporter didn't match at DEBUG level to help diagnose routing issues
-			if r.logger != nil {
-				metricsAttrs := make(map[string]string)
-				resourceAttrs.Range(func(k string, v pcommon.Value) bool {
-					metricsAttrs[k] = v.AsString()
-					return true
-				})
-				// Extract exporter properties for comparison
-				exportProps := make(map[string]any)
-				if spec, ok := exp.properties["spec"].(map[string]any); ok {
-					if resourceAttrs, ok := spec["resourceAttributes"].(map[string]any); ok {
-						exportProps["spec.resourceAttributes"] = resourceAttrs
+			} else {
+				// Log why this exporter didn't match at DEBUG level to help diagnose routing issues
+				if r.logger != nil {
+					metricsAttrs := make(map[string]string)
+					resourceAttrs.Range(func(k string, v pcommon.Value) bool {
+						metricsAttrs[k] = v.AsString()
+						return true
+					})
+					// Extract exporter properties for comparison
+					exportProps := make(map[string]any)
+					if spec, ok := exp.properties["spec"].(map[string]any); ok {
+						if resourceAttrs, ok := spec["resourceAttributes"].(map[string]any); ok {
+							exportProps["spec.resourceAttributes"] = resourceAttrs
+						}
 					}
+					r.logger.Debug("exporter did not match routing rules",
+						zap.String("endpoint_id", string(id)),
+						zap.Any("metrics_resource_attributes", metricsAttrs),
+						zap.Any("exporter_properties", exportProps),
+					)
 				}
-				r.logger.Debug("exporter did not match routing rules",
-					zap.String("endpoint_id", string(id)),
-					zap.Any("metrics_resource_attributes", metricsAttrs),
-					zap.Any("exporter_properties", exportProps),
-				)
 			}
 		}
 	}
 
 	// Log why routing failed if no exporters matched
 	// Always log at DEBUG level when routing fails to help diagnose issues
-	if len(matched) == 0 && len(r.exporters) > 0 {
+	if len(matched) == 0 && r.count > 0 {
 		// Convert resource attrs to map for logging
 		resourceAttrsMap := make(map[string]string)
 		resourceAttrs.Range(func(k string, v pcommon.Value) bool {
@@ -195,27 +207,29 @@ func (r *telemetryRouter) Route(resourceAttrs pcommon.Map) []component.Component
 		if r.logger != nil {
 			r.logger.Debug("metrics did not match any routing rules",
 				zap.Any("resource_attributes", resourceAttrsMap),
-				zap.Int("available_exporters", len(r.exporters)),
+				zap.Int("available_exporters", r.count),
 				zap.Int("routing_rules", len(r.rules)),
 			)
 
 			// Log details about each exporter's properties for debugging
-			for id, exp := range r.exporters {
-				exportProps := make(map[string]any)
-				if spec, ok := exp.properties["spec"].(map[string]any); ok {
-					if resourceAttrs, ok := spec["resourceAttributes"].(map[string]any); ok {
-						exportProps["spec.resourceAttributes"] = resourceAttrs
+			for id, exps := range r.exporters {
+				for _, exp := range exps {
+					exportProps := make(map[string]any)
+					if spec, ok := exp.properties["spec"].(map[string]any); ok {
+						if resourceAttrs, ok := spec["resourceAttributes"].(map[string]any); ok {
+							exportProps["spec.resourceAttributes"] = resourceAttrs
+						}
 					}
-				}
-				// Also include other relevant properties
-				if labels, ok := exp.properties["labels"].(map[string]string); ok {
-					exportProps["labels"] = labels
-				}
-				if len(exportProps) > 0 {
-					r.logger.Info("exporter endpoint properties",
-						zap.String("endpoint_id", string(id)),
-						zap.Any("properties", exportProps),
-					)
+					// Also include other relevant properties
+					if labels, ok := exp.properties["labels"].(map[string]string); ok {
+						exportProps["labels"] = labels
+					}
+					if len(exportProps) > 0 {
+						r.logger.Info("exporter endpoint properties",
+							zap.String("endpoint_id", string(id)),
+							zap.Any("properties", exportProps),
+						)
+					}
 				}
 			}
 
@@ -232,7 +246,7 @@ func (r *telemetryRouter) Route(resourceAttrs pcommon.Map) []component.Component
 
 	// Defensive check: ensure we never return all exporters when rules don't match
 	// This should never happen, but we check to prevent bugs
-	if len(matched) == len(r.exporters) && len(r.rules) > 0 {
+	if len(matched) == r.count && len(r.rules) > 0 {
 		// This would mean all exporters matched, which is suspicious
 		// Log a warning but still return the matched exporters
 		if r.logger != nil {
@@ -252,11 +266,11 @@ func (r *telemetryRouter) Route(resourceAttrs pcommon.Map) []component.Component
 	return matched
 }
 
-// Count returns the current number of exporters.
+// Count returns the current number of exporters across all endpoints.
 func (r *telemetryRouter) Count() int {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return len(r.exporters)
+	return r.count
 }
 
 // matchesAllRules checks if all routing rules match for the given resource attributes and endpoint properties.

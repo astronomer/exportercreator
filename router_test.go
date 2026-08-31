@@ -4,6 +4,8 @@
 package exportercreator
 
 import (
+	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,9 +13,10 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.uber.org/zap"
 
-	"github.com/stuart23/exportercreator/internal/metadata"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
+	"github.com/stuart23/exportercreator/internal/metadata"
 )
 
 // nopExporterComponent is a simple exporter component for testing
@@ -250,4 +253,93 @@ func TestTelemetryRouter_Route_WithCRDSpec(t *testing.T) {
 	resourceAttrs2.PutStr("generator", "beta")
 	matched2 := router.Route(resourceAttrs2)
 	assert.Len(t, matched2, 0, "Should not match with generator=beta")
+}
+
+// Route logs the exporter count before it takes r.mu, so that count must come from the
+// locking Count and not a bare read of r.count: observer callbacks maintain that field while
+// routing reads it, and routing runs concurrently with those callbacks in production.
+func TestTelemetryRouter_RouteConcurrentWithEndpointChurn(t *testing.T) {
+	telemetry, err := metadata.NewTelemetryBuilder(componenttest.NewNopTelemetrySettings())
+	require.NoError(t, err)
+	router := newTelemetryRouter([]RoutingRule{
+		{ResourceAttribute: "k8s.pod.labels.app", EndpointProperty: "labels.app"},
+	}, telemetry)
+	// The debug log that reads the count is only built when a logger is set.
+	router.setLogger(zap.NewNop())
+
+	attrs := pcommon.NewMap()
+	attrs.PutStr("k8s.pod.labels.app", "test")
+
+	const iterations = 2000
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			router.Route(attrs)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		env := observer.EndpointEnv{"labels": map[string]string{"app": "test"}}
+		for i := 0; i < iterations; i++ {
+			id := observer.EndpointID(fmt.Sprintf("endpoint-%d", i))
+			router.AddExporter(id, &nopExporterComponent{}, env)
+			router.RemoveExporter(id)
+		}
+	}()
+
+	wg.Wait()
+}
+
+// The exporter total is now cached rather than derived, so it can drift from the map it
+// summarises. Every mutation path has to keep the two in step, including the ones that are
+// easy to get wrong: several exporters under one endpoint, and removing an endpoint that
+// was never added or was already removed.
+func TestTelemetryRouter_CachedCountMatchesExporters(t *testing.T) {
+	telemetry, err := metadata.NewTelemetryBuilder(componenttest.NewNopTelemetrySettings())
+	require.NoError(t, err)
+	router := newTelemetryRouter([]RoutingRule{}, telemetry)
+
+	// recount derives the total the way countLocked used to, to compare against the cache.
+	recount := func() (n int) {
+		router.mu.RLock()
+		defer router.mu.RUnlock()
+		for _, exps := range router.exporters {
+			n += len(exps)
+		}
+		return n
+	}
+	requireConsistent := func(want int, step string) {
+		t.Helper()
+		require.Equal(t, want, recount(), "exporters map after %s", step)
+		require.Equal(t, want, router.Count(), "cached count after %s", step)
+	}
+
+	env := observer.EndpointEnv{"labels": map[string]string{"app": "test"}}
+	a, b := observer.EndpointID("endpoint-a"), observer.EndpointID("endpoint-b")
+
+	requireConsistent(0, "construction")
+
+	// Two exporters under one endpoint: the remove has to subtract both, not one.
+	router.AddExporter(a, &nopExporterComponent{}, env)
+	router.AddExporter(a, &nopExporterComponent{}, env)
+	requireConsistent(2, "two exporters on one endpoint")
+
+	router.AddExporter(b, &nopExporterComponent{}, env)
+	requireConsistent(3, "a second endpoint")
+
+	router.RemoveExporter(a)
+	requireConsistent(1, "removing the two-exporter endpoint")
+
+	router.RemoveExporter(a)
+	requireConsistent(1, "removing an already-removed endpoint")
+
+	router.RemoveExporter(observer.EndpointID("never-added"))
+	requireConsistent(1, "removing an unknown endpoint")
+
+	router.RemoveExporter(b)
+	requireConsistent(0, "removing the last endpoint")
 }
