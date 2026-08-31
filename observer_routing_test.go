@@ -12,8 +12,8 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
 	"github.com/astronomer/exportercreator/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
 )
 
 // mockJSONFileEndpoint is a mock implementation of JSONFileEndpoint for testing

@@ -17,7 +17,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest/observer"
 
-	"github.com/stuart23/exportercreator/internal/metadata"
+	"github.com/astronomer/exportercreator/internal/metadata"
 )
 
 // newObservedSettings returns exporter settings whose logger records everything at or above

@@ -18,9 +18,9 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata/metricdatatest"
 	"go.uber.org/zap"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
 	"github.com/astronomer/exportercreator/internal/metadata"
 	"github.com/astronomer/exportercreator/internal/metadatatest"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
 )
 
 // nopExporterComponent is a simple exporter component for testing

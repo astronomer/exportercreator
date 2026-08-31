@@ -12,8 +12,8 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
+	"github.com/astronomer/exportercreator/internal/metadata"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
-	"github.com/stuart23/exportercreator/internal/metadata"
 )
 
 // twoTemplateConfig returns a config whose two templates both match a port endpoint.

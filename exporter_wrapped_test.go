@@ -16,8 +16,8 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
 	"github.com/astronomer/exportercreator/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
 )
 
 // TestExporterCreator_ConsumeMetrics_WithWrappedExporter verifies that metrics are actually

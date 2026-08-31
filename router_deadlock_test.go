@@ -15,8 +15,8 @@ import (
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest/observer"
 
+	"github.com/astronomer/exportercreator/internal/metadata"
 	obs "github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
-	"github.com/stuart23/exportercreator/internal/metadata"
 )
 
 // Route holds a read lock for its whole body, so anything it calls must not take that lock

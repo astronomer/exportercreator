@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package exportercreator // import "github.com/stuart23/exportercreator"
+package exportercreator // import "github.com/astronomer/exportercreator"
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 
+	"github.com/astronomer/exportercreator/internal/metadata"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
-	"github.com/stuart23/exportercreator/internal/metadata"
 )
 
 // endpointSeries is one series of the observed-endpoints gauge.

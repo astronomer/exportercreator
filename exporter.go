@@ -20,8 +20,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
 	"github.com/astronomer/exportercreator/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
 )
 
 var (

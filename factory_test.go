@@ -15,8 +15,8 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	noopmetric "go.opentelemetry.io/otel/metric/noop"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
 	"github.com/astronomer/exportercreator/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
 )
 
 func TestCreateExporter_SameInstancePerConfig(t *testing.T) {

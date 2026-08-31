@@ -14,9 +14,9 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata/metricdatatest"
 
+	"github.com/astronomer/exportercreator/internal/metadata"
+	"github.com/astronomer/exportercreator/internal/metadatatest"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
-	"github.com/stuart23/exportercreator/internal/metadata"
-	"github.com/stuart23/exportercreator/internal/metadatatest"
 )
 
 func endpointsSeen(observerType string, byType map[string]int64) []metricdata.DataPoint[int64] {

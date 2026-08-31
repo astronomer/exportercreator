@@ -19,7 +19,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata/metricdatatest"
 
-	"github.com/stuart23/exportercreator/internal/metadatatest"
+	"github.com/astronomer/exportercreator/internal/metadatatest"
 )
 
 // The non-routable counters cover two separate losses. Telemetry dropped for an unhandled

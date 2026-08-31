@@ -18,8 +18,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata/metricdatatest"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/astronomer/exportercreator/internal/metadatatest"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer"
-	"github.com/stuart23/exportercreator/internal/metadatatest"
 )
 
 // metricsOnlyCreator returns a creator whose single endpoint resolves to a metrics-only

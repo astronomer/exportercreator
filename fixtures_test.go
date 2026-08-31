@@ -167,4 +167,3 @@ var unsupportedEndpoint = observer.Endpoint{
 	Target:  "localhost:1234",
 	Details: nil,
 }
-

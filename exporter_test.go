@@ -273,4 +273,3 @@ type failingMetricsExporter struct {
 func (f *failingMetricsExporter) ConsumeMetrics(ctx context.Context, md pmetric.Metrics) error {
 	return errors.New("export failed")
 }
-
