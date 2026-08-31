@@ -6,7 +6,7 @@
 | Stability     | [development]: logs, metrics, traces   |
 | Distributions | [] |
 | Issues        | [![Open issues](https://img.shields.io/github/issues-search/open-telemetry/opentelemetry-collector-contrib?query=is%3Aissue%20is%3Aopen%20label%3Aexporter%2Fexportercreator%20&label=open&color=orange&logo=opentelemetry)](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues?q=is%3Aopen+is%3Aissue+label%3Aexporter%2Fexportercreator) [![Closed issues](https://img.shields.io/github/issues-search/open-telemetry/opentelemetry-collector-contrib?query=is%3Aissue%20is%3Aclosed%20label%3Aexporter%2Fexportercreator%20&label=closed&color=blue&logo=opentelemetry)](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues?q=is%3Aclosed+is%3Aissue+label%3Aexporter%2Fexportercreator) |
-| Code coverage | [![codecov](https://codecov.io/github/open-telemetry/opentelemetry-collector-contrib/graph/main/badge.svg?component=exporter_exporter_creator)](https://app.codecov.io/gh/open-telemetry/opentelemetry-collector-contrib/tree/main/?components%5B0%5D=exporter_exporter_creator&displayType=list) |
+| Code coverage | [![codecov](https://codecov.io/github/open-telemetry/opentelemetry-collector-contrib/graph/main/badge.svg?component=exporter_exportercreator)](https://app.codecov.io/gh/open-telemetry/opentelemetry-collector-contrib/tree/main/?components%5B0%5D=exporter_exportercreator&displayType=list) |
 | [Code Owners](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/CONTRIBUTING.md#becoming-a-code-owner)    | [@stu](https://www.github.com/stu) |
 
 [development]: https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/component-stability.md#development
@@ -26,8 +26,8 @@ Add the module under `exporters` in `builder-config.yaml` (use a real version ta
 
 ```yaml
 exporters:
-  - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.147.0
-  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.147.0
+  - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.151.0
+  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.151.0
   - gomod: github.com/astronomer/exportercreator v0.1.0
 ```
 
@@ -110,6 +110,53 @@ Each routing rule maps a resource attribute to an endpoint property:
 | `rule` | `string` | Expression that must evaluate to true for the exporter to be created |
 | `config` | `map[string]any` | Exporter configuration (supports endpoint value expansion) |
 | `resource_attributes` | `map[string]any` | Resource attributes to associate with this exporter |
+| `signals` | `map[string]bool` | Which signals this exporter handles. Omit to handle all three |
+
+#### Signals
+
+Omit `signals` and the exporter handles metrics, logs and traces. Provide it and it becomes an
+allowlist: **only the signals set to `true` are enabled, and any signal you leave out is
+disabled.**
+
+```yaml
+exporters:
+  otlp/metrics-only:
+    rule: type == "pod" && labels["otel-export"] == "true"
+    signals:
+      metrics: true
+    config:
+      endpoint: '`labels["collector-endpoint"]`'
+```
+
+Because unlisted signals are disabled rather than left alone, `signals` cannot be used to turn a
+single signal off: `signals: {logs: false}` disables all three, not just logs. To handle
+everything except logs, name what you want:
+
+```yaml
+    signals:
+      metrics: true
+      traces: true
+```
+
+A block that enables nothing is rejected at startup, as is an unrecognised signal name or a
+non-boolean value.
+
+### Signals an exporter cannot handle
+
+Routing matches on resource attributes alone, so it can select an endpoint whose exporter does
+not handle that signal - a `prometheusremotewrite` template matched by a logs pipeline, for
+example. That exporter cannot consume the telemetry, and because the resource already matched,
+it does not fall through to `default_exporters`. The telemetry is dropped only if no other
+matched exporter handles the signal.
+
+Dropped telemetry is reported by
+`otelcol_exporter_creator_nonroutable_log_records_total`,
+`otelcol_exporter_creator_nonroutable_metric_points_total` or
+`otelcol_exporter_creator_nonroutable_spans_total`. Each incompatible matched exporter also logs
+a warning once per signal.
+
+To avoid the drop, route only the signals your templates handle through `exporter_creator`, or
+give the endpoint an exporter template that covers them.
 
 ## Endpoint Value Expansion
 
@@ -123,8 +170,5 @@ config:
 
 ## Development
 
-```bash
-go test ./...
-```
-
-`go test ./...` uses the published observer module from the proxy; no local contrib checkout is required.
+See [DEVELOPMENT.md](DEVELOPMENT.md) for running the tests and regenerating the files built from
+`metadata.yaml`.

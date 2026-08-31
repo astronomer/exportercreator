@@ -8,16 +8,53 @@ The following telemetry is emitted by this component.
 
 ### otelcol_exporter_creator_exporters_count
 
-Current number of exporters created by the exporter_creator. [Development]
+Current number of exporters created by the exporter_creator.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
 | {exporters} | Gauge | Int | Development |
 
+#### Attributes
+
+| Name | Description | Values | Semantic Convention |
+| ---- | ----------- | ------ | ------------------- |
+| exporter_type | Type of the exporter created from the matching template. | Any Str | - |
+
+### otelcol_exporter_creator_nonroutable_log_records_total
+
+Total number of log records that could not be routed to any exporter.
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {records} | Sum | Int | true | Development |
+
 ### otelcol_exporter_creator_nonroutable_metric_points_total
 
-Total number of metric points that could not be routed to any exporter. [Development]
+Total number of metric points that could not be routed to any exporter.
 
 | Unit | Metric Type | Value Type | Monotonic | Stability |
 | ---- | ----------- | ---------- | --------- | --------- |
 | {metric_points} | Sum | Int | true | Development |
+
+### otelcol_exporter_creator_nonroutable_spans_total
+
+Total number of spans that could not be routed to any exporter.
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {spans} | Sum | Int | true | Development |
+
+### otelcol_exporter_creator_observed_endpoints
+
+Current number of endpoints reported by the observers being watched.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| {endpoints} | Gauge | Int | Development |
+
+#### Attributes
+
+| Name | Description | Values | Semantic Convention |
+| ---- | ----------- | ------ | ------------------- |
+| observer_type | Type of the observer extension that reported the endpoint, as named in watch_observers. | Any Str | - |
+| endpoint_type | Kind of resource the endpoint describes, as reported by the observer. | Any Str | - |
